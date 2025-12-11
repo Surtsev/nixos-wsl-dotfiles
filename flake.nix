@@ -16,7 +16,7 @@
     in
     {
       homeConfigurations = {
-        user = home-manager.lib.homeManagerConfiguration {
+        surtsev = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
 
           modules = [

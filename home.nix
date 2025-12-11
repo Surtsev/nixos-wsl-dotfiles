@@ -1,10 +1,10 @@
-{ config, pkgs, ... }:
+{ config, pkgs, username ? "surtsev", homeDirectory ? "/home/surtsev", ... }:
 
 {
   home = {
-    username = "user";
-    homeDirectory = "/home/user";
-    stateVersion = "24.05";
+    username = "surtsev";
+    homeDirectory = "/home/surtsev";
+    stateVersion = "25.05";
 
     packages = with pkgs; [
       # Terminal utilities
@@ -13,6 +13,7 @@
       wget
       curl
       tmux
+      fish
 
       # Python ecosystem
       python3
@@ -36,9 +37,9 @@
   # Git configuration
   programs.git = {
     enable = true;
-    userName = "Your Name";
-    userEmail = "your.email@example.com";
-    extraConfig = {
+    settings = {
+      userName = "Surtsev";
+      userEmail = "surtsev2006@gmail.com";
       core.editor = "nvim";
       init.defaultBranch = "main";
     };
@@ -61,10 +62,10 @@
       cmp-path
       luasnip
       cmp_luasnip
-      copilot-vim
+      # copilot-vim
     ];
 
-    extraConfig = '''
+    extraConfig = ''
       " Basic settings
       set number
       set relativenumber
@@ -91,7 +92,7 @@
       nnoremap <leader>fg <cmd>Telescope live_grep<cr>
       nnoremap <leader>fb <cmd>Telescope buffers<cr>
       nnoremap <leader>fh <cmd>Telescope help_tags<cr>
-    ''';
+    '';
   };
 
   # Tmux configuration
@@ -106,7 +107,7 @@
       set -g prefix C-a
       bind C-a send-prefix
 
-      bind | split-window -h
+      bind \| split-window -h
       bind - split-window -v
       unbind '"'
       unbind %
@@ -120,9 +121,74 @@
       bind -r l select-pane -R
 
       set -g mouse on
-      set -g status-style 'bg=#1e1e2e fg=#cdd6f4'
-      set -g window-status-current-style 'bg=#89b4fa fg=#1e1e2e bold'
+      set -g status-style "bg=#1e1e2e fg=#cdd6f4"
+      set -g window-status-current-style "bg=#89b4fa fg=#1e1e2e bold"
     '';
+  };
+
+  # Fish shell configuration
+  programs.fish = {
+    enable = true;
+    interactiveShellInit = ''
+      # Set up environment
+      set -gx EDITOR nvim
+      set -gx PATH $PATH $HOME/.cargo/bin $HOME/go/bin
+      
+      # Abbreviations (like aliases but smarter)
+      abbr -a ls "eza --icons"
+      abbr -a ll "eza -lah --icons"
+      abbr -a cat "bat --theme Catppuccin-mocha"
+      abbr -a cd z
+      abbr -a vim nvim
+      abbr -a nix-switch "sudo nixos-rebuild switch"
+      abbr -a hm-switch "home-manager switch --flake ."
+      
+      # Functions
+      function fish_greeting
+        fastfetch
+      end
+      
+      function mkcd
+        mkdir -p $argv
+        cd $argv
+      end
+      
+      function extract
+        set -l filename (basename $argv[1])
+        switch $filename
+          case "*.tar.gz"
+            tar xzf $argv[1]
+          case "*.tar.bz2"
+            tar xjf $argv[1]
+          case "*.tar.xz"
+            tar xJf $argv[1]
+          case "*.zip"
+            unzip $argv[1]
+          case "*.rar"
+            unrar x $argv[1]
+          case "*"
+            echo "Unknown file type for $filename"
+        end
+      end
+      
+      # fzf integration
+      fzf --fish | source
+    '';
+
+    shellAliases = {
+      l = "eza --icons";
+      la = "eza -a --icons";
+      lla = "eza -lah --icons";
+      lt = "eza --tree --icons";
+      llt = "eza --tree -lah --icons";
+      gs = "git status";
+      ga = "git add";
+      gc = "git commit";
+      gp = "git push";
+      gl = "git log --oneline";
+      gd = "git diff";
+    };
+
   };
 
   # Bash configuration
@@ -133,9 +199,9 @@
       export PATH=$PATH:$HOME/.cargo/bin
       export PATH=$PATH:$HOME/go/bin
       
-      alias ls='eza --icons'
-      alias ll='eza -lah --icons'
-      alias cat='bat --theme Catppuccin-mocha'
+      alias ls="eza --icons"
+      alias ll="eza -lah --icons"
+      alias cat="bat --theme Catppuccin-mocha"
     '';
   };
 
