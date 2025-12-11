@@ -38,8 +38,8 @@
   programs.git = {
     enable = true;
     settings = {
-      userName = "Surtsev";
-      userEmail = "surtsev2006@gmail.com";
+      user.name = "Surtsev";
+      user.email = "surtsev2006@gmail.com";
       core.editor = "nvim";
       init.defaultBranch = "main";
     };
