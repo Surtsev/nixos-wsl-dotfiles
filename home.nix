@@ -6,6 +6,8 @@
     homeDirectory = "/home/surtsev";
     stateVersion = "25.05";
 
+    
+
     packages = with pkgs; [
       # Terminal utilities
       fastfetch
@@ -14,6 +16,8 @@
       curl
       tmux
       fish
+      cava
+      btop
 
       # Python ecosystem
       python3
@@ -23,7 +27,15 @@
       # Programming languages
       go
       rustup
-      php
+
+      # PHP ecosystem
+      php84
+      phpdocumentor
+      php84Packages.composer
+
+      docker  docker-compose
+      mycli wp4nix
+      mariadb postgresql
 
       # Additional utilities
       ripgrep
@@ -141,7 +153,7 @@
       abbr -a cd z
       abbr -a vim nvim
       abbr -a nix-switch "sudo nixos-rebuild switch"
-      abbr -a hm-switch "home-manager switch --flake ."
+      abbr -a hm-switch "home-manager switch --flake ~/.config/home-manager"
       
       # Functions
       function fish_greeting
@@ -189,6 +201,13 @@
       gd = "git diff";
     };
 
+  };
+
+  programs.zoxide = {
+    enable = true;
+    enableFishIntegration = true;
+    enableBashIntegration = false;  # Если не используешь bash
+    enableZshIntegration = false;   # Если не используешь zsh
   };
 
   # Bash configuration
