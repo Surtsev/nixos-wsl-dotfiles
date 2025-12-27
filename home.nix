@@ -16,8 +16,8 @@
       curl
       tmux
       fish
-      cava
       btop
+      yazi
 
       # Python ecosystem
       python3
@@ -56,6 +56,19 @@
       init.defaultBranch = "main";
     };
   };
+
+  # SSH configuration
+  programs.ssh = {
+    enable = true;
+    addKeysToAgent = "yes";
+    extraConfig = ''
+      AddKeysToAgent yes
+      IdentityFile ~/.ssh/id_ed25519
+    '';
+  };
+
+  services.ssh-agent.enable = true;
+
 
   # Neovim configuration
   programs.neovim = {
