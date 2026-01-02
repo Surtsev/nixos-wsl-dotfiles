@@ -162,7 +162,7 @@
       # Abbreviations (like aliases but smarter)
       abbr -a ls "eza --icons"
       abbr -a ll "eza -lah --icons"
-      abbr -a cat "bat --theme Catppuccin-mocha"
+      abbr -a cat "bat "
       abbr -a cd z
       abbr -a vim nvim
       abbr -a nix-switch "sudo nixos-rebuild switch"
