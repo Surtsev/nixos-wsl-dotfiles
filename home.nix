@@ -145,6 +145,8 @@
       bind -r k select-pane -U
       bind -r l select-pane -R
 
+      set -g default-command "exec bash"
+
       set -g mouse on
       set -g status-style "bg=#1e1e2e fg=#cdd6f4"
       set -g window-status-current-style "bg=#89b4fa fg=#1e1e2e bold"
