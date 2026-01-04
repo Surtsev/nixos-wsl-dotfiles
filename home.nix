@@ -146,7 +146,7 @@
       bind -r k select-pane -U
       bind -r l select-pane -R
 
-      set -g default-command "exec bash"
+      set -g default-command "exec fish"
 
       set -g mouse on
       set -g status-style "bg=#1e1e2e fg=#cdd6f4"
