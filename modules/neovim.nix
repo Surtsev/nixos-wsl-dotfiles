@@ -6,10 +6,12 @@
     defaultEditor = true;
     viAlias = true;
     vimAlias = true;
-    
+ 
     plugins = with pkgs.vimPlugins; [
       vim-airline
       vim-airline-themes
+      nvim-tree-lua
+      nvim-web-devicons
       vim-nix
       vim-polyglot
       vim-python-pep8-indent
@@ -81,7 +83,7 @@ set cmdheight=2
 colorscheme habamax
 
 highlight Pmenu ctermfg=15 ctermbg=8 guifg=#ffffff guibg=#2e2e3e
-highlight PmenuSel ctermfg=0 ctermbg=7 guifg=#2e2e3e guibg=#5b9bd5
+highlight PmenuSel ctermfg=15 ctermbg=4 guifg=#ffffff guibg=#5b9bd5
 highlight PmenuThumb ctermbg=7 guibg=#5b9bd5
 highlight PmenuSbar ctermbg=8 guibg=#2e2e3e
 
@@ -90,6 +92,19 @@ highlight PmenuSbar ctermbg=8 guibg=#2e2e3e
 " ============================================================================
 let mapleader = " "
 let maplocalleader = " "
+
+" ============================================================================
+" KEY MAPPINGS - FILE TREE
+" ============================================================================
+nnoremap <leader>e <cmd>NvimTreeToggle<cr>
+nnoremap <leader>1 <cmd>NvimTreeFocus<cr>
+
+" ============================================================================
+" KEY MAPPINGS - BUFFER NAVIGATION
+" ============================================================================
+nnoremap <leader>2 <cmd>bnext<cr>
+nnoremap <leader>3 <cmd>bprev<cr>
+nnoremap <leader>q <cmd>bdelete<cr>      
 
 " ============================================================================
 " KEY MAPPINGS - FUZZY FINDER
@@ -115,7 +130,7 @@ nnoremap <leader>gi <cmd>lua vim.lsp.buf.implementation()<CR>
 nnoremap <leader>gs <cmd>lua vim.lsp.buf.signature_help()<CR>
 nnoremap <leader>rn <cmd>lua vim.lsp.buf.rename()<CR>
 nnoremap <leader>ca <cmd>lua vim.lsp.buf.code_action()<CR>
-nnoremap <leader>e <cmd>lua vim.diagnostic.open_float()<CR>
+nnoremap <leader>E <cmd>lua vim.diagnostic.open_float()<CR>
 nnoremap <leader>dn <cmd>lua vim.diagnostic.goto_next()<CR>
 nnoremap <leader>dp <cmd>lua vim.diagnostic.goto_prev()<CR>
 
@@ -126,6 +141,14 @@ nnoremap <leader>fm <cmd>lua require("conform").format()<CR>
 vnoremap <leader>fm <cmd>lua require("conform").format()<CR>
 
 " ============================================================================
+" KEY MAPPINGS - DIAGNOSTICS (Ошибки и предупреждения)
+" ============================================================================
+nnoremap <leader>xx <cmd>Telescope diagnostics<cr>
+nnoremap <leader>xd <cmd>lua vim.diagnostic.setloclist()<CR>
+nnoremap <leader>xl <cmd>lua vim.diagnostic.setqflist()<CR>
+
+
+" ============================================================================
 " AIRLINE CONFIGURATION
 " ============================================================================
 let g:airline#extensions#tabline#enabled = 1
@@ -134,6 +157,17 @@ let g:airline_powerline_fonts = 0
     '';
 
     extraLuaConfig = ''
+  -- ========================================================================
+  -- NVIM-TREE: FILE EXPLORER (ПЕРВЫМ!)
+  -- ========================================================================
+  require('nvim-tree').setup({
+    view = {
+      width = 30,
+      side = 'left',
+    },
+    ...
+  })
+      
 -- ========================================================================
 -- NVIM-CMP: AUTOCOMPLETE CONFIGURATION
 -- ========================================================================
@@ -172,7 +206,7 @@ cmp.setup({
     ['<C-b>'] = cmp.mapping.scroll_docs(-4),
     ['<C-f>'] = cmp.mapping.scroll_docs(4),
     ['<C-Space>'] = cmp.mapping.complete(),
-    ['<C-e>'] = cmp.mapping.abort(),
+    ['<Esc>'] = cmp.mapping.abort(),
     ['<CR>'] = cmp.mapping.confirm({ select = true }),
     ['<Tab>'] = cmp.mapping(function(fallback)
       if cmp.visible() then
@@ -384,6 +418,34 @@ require('conform').setup({
     lsp_fallback = true,
   },
 })
+
+-- ========================================================================
+-- DIAGNOSTICS: ПОДСВЕТКА ОШИБОК И ПРЕДУПРЕЖДЕНИЙ
+-- ========================================================================
+vim.diagnostic.config({
+  virtual_text = {
+    prefix = '●',
+    spacing = 4,
+  },
+  signs = true,
+  underline = true,
+  update_in_insert = false,
+  severity_sort = true,
+})
+
+-- Кастомные иконки для диагностики
+local signs = { Error = ' ', Warn = ' ', Hint = ' ', Info = ' ' }
+for type, icon in pairs(signs) do
+  local hl = 'DiagnosticSign' .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+end
+
+-- Подсветка цветов ошибок
+vim.api.nvim_set_hl(0, 'DiagnosticSignError', { fg = '#ff5555' })
+vim.api.nvim_set_hl(0, 'DiagnosticSignWarn', { fg = '#ffaa00' })
+vim.api.nvim_set_hl(0, 'DiagnosticSignHint', { fg = '#00ffff' })
+vim.api.nvim_set_hl(0, 'DiagnosticSignInfo', { fg = '#5b9bd5' })
+
 
 -- ========================================================================
 -- NVIM-TREESITTER
