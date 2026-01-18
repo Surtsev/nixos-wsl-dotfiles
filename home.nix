@@ -1,6 +1,8 @@
 { config, pkgs, username ? "surtsev", homeDirectory ? "/home/surtsev", ... }:
 
 {
+  nixpkgs.config.allowUnfree = true;
+
   imports = [
     ./modules/neovim.nix
   ];
