@@ -23,9 +23,13 @@
       yazi
 
       # Python ecosystem
-      python3
-      python3Packages.pip
       uv
+      python312
+      python312Packages.pip
+      python312Packages.black
+      python312Packages.pylint
+      python312Packages.pytest
+      python312Packages.isort
 
       # Programming languages
       go
