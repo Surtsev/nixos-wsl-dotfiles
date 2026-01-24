@@ -32,7 +32,6 @@
     ];
 
     extraPackages = with pkgs; [
-      pyright
       gopls
       rust-analyzer
       phpactor
@@ -40,8 +39,6 @@
       nodePackages.typescript-language-server
       nodePackages.vscode-langservers-extracted
       marksman
-      black
-      isort
       ruff
       gofumpt
       rustfmt

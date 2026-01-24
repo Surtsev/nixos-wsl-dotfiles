@@ -23,14 +23,16 @@
       yazi
 
       # Python ecosystem
+      python313
+      python313Packages.pip
+      python313Packages.black
+      python313Packages.isort
+      python313Packages.pylint
+      python313Packages.python-lsp-server
+      python313Packages.python-lsp-black
+      python313Packages.pylsp-mypy
+      pyright
       uv
-      python312
-      python312Packages.pip
-      python312Packages.black
-      python312Packages.pylint
-      python312Packages.pytest
-      python312Packages.isort
-
       # Programming languages
       go
       rustup
