@@ -99,9 +99,10 @@ nnoremap <leader>1 <cmd>NvimTreeFocus<cr>
 " ============================================================================
 " KEY MAPPINGS - BUFFER NAVIGATION
 " ============================================================================
-nnoremap <leader>2 <cmd>bnext<cr>
-nnoremap <leader>3 <cmd>bprev<cr>
+nnoremap <leader>2 <cmd>bprev<cr>
+nnoremap <leader>3 <cmd>bnext<cr>
 nnoremap <leader>q <cmd>bdelete<cr>      
+nnoremap <leader>w <cmd>w<cr>
 
 " ============================================================================
 " KEY MAPPINGS - FUZZY FINDER
