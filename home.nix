@@ -21,6 +21,7 @@
       fish
       btop
       yazi
+      gh
 
       # Python ecosystem
       python313
