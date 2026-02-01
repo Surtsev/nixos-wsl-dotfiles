@@ -22,6 +22,7 @@
       btop
       yazi
       gh
+      tldr
 
       # Python ecosystem
       python313
