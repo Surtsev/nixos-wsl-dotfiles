@@ -74,6 +74,11 @@
     enableDefaultConfig = false;
     matchBlocks."*".addKeysToAgent = "yes";
     extraConfig = ''
+
+      Host github.com
+        ControlMaster auto
+        ControlPersist 10m
+
       AddKeysToAgent yes
       IdentityFile ~/.ssh/id_ed25519
     '';
