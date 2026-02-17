@@ -85,8 +85,8 @@ highlight PmenuThumb ctermbg=7 guibg=#5b9bd5
 highlight PmenuSbar ctermbg=8 guibg=#2e2e3e
 
 " === Transparent background ===
-highlight Normal       ctermbg=none guibg=none
-highlight NonText      ctermbg=none guibg=none
+highlight NonText guibg=NONE ctermbg=NONE
+highlight Normal guibg=NONE ctermbg=NONE
 highlight NormalFloat  ctermbg=none guibg=none
 highlight FloatBorder  ctermbg=none guibg=none
 highlight SignColumn   ctermbg=none guibg=none
@@ -169,6 +169,13 @@ let g:airline_powerline_fonts = 0
     '';
 
     extraLuaConfig = ''
+
+vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
+vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
+vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
+vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
+vim.api.nvim_set_hl(0, "LineNr", { bg = "none" })
+
   -- ========================================================================
   -- NVIM-TREE: FILE EXPLORER (ПЕРВЫМ!)
   -- ========================================================================
@@ -180,25 +187,25 @@ let g:airline_powerline_fonts = 0
     ...
   })
       
--- ========================================================================
--- NVIM-CMP: AUTOCOMPLETE CONFIGURATION
--- ========================================================================
-local cmp = require('cmp')
-local luasnip = require('luasnip')
-
-require('luasnip.loaders.from_vscode').lazy_load()
+-- NVIM-CMP AUTOCOMPLETE CONFIGURATION
+local cmp = require("cmp")
+local luasnip = require("luasnip")
+require("luasnip.loaders.from_vscode").lazy_load()
 
 local function get_completion_sources()
   return {
-    { name = 'nvim_lsp' },
-    { name = 'luasnip' },
-    { name = 'buffer', keyword_length = 3 },
-    { name = 'path' },
-    { name = 'cmdline' },
+    { name = "nvim_lsp" },
+    { name = "luasnip" },
+    { name = "buffer", keyword_length = 3 },
+    { name = "path" },
+    { name = "cmdline" },
   }
 end
 
 cmp.setup({
+  completion = {
+    autocomplete = false,  -- ✅ Отключить попап на Tab/пробел/InsertEnter
+  },
   snippet = {
     expand = function(args)
       luasnip.lsp_expand(args.body)
@@ -206,30 +213,31 @@ cmp.setup({
   },
   window = {
     completion = {
-      border = 'rounded',
-      winhighlight = 'Normal:Pmenu,FloatBorder:PmenuBorder,CursorLine:PmenuSel',
+      border = "rounded",
+      winhighlight = "Normal:Pmenu,FloatBorder:Pmenu, CursorLine:PmenuSel,Search:PmenuSel",  -- Белый текст из ваших hl
     },
     documentation = {
-      border = 'rounded',
-      winhighlight = 'Normal:Pmenu,FloatBorder:PmenuBorder',
+      border = "rounded",
+      winhighlight = "Normal:Pmenu,FloatBorder:Pmenu",
     },
   },
   mapping = cmp.mapping.preset.insert({
-    ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-    ['<C-f>'] = cmp.mapping.scroll_docs(4),
-    ['<C-Space>'] = cmp.mapping.complete(),
-    ['<Esc>'] = cmp.mapping.abort(),
-    ['<CR>'] = cmp.mapping.confirm({ select = true }),
-    ['<Tab>'] = cmp.mapping(function(fallback)
+    ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+    ["<C-f>"] = cmp.mapping.scroll_docs(4),
+    ["<C-Space>"] = cmp.mapping.complete(),  -- ✅ Ручной вызов после букв
+    ["<C-e>"] = cmp.mapping.abort(),
+    ["<Esc>"] = cmp.mapping.abort(),
+    ["<CR>"] = cmp.mapping.confirm({ select = false }),  -- Без авто-выбора
+    ["<Tab>"] = cmp.mapping(function(fallback)
       if cmp.visible() then
         cmp.select_next_item()
       elseif luasnip.expand_or_jumpable() then
         luasnip.expand_or_jump()
       else
-        fallback()
+        fallback()  -- ✅ Чистый Tab (отступ/пробел)
       end
-    end, { 'i', 's' }),
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
+    end, { "i", "s" }),
+    ["<S-Tab>"] = cmp.mapping(function(fallback)
       if cmp.visible() then
         cmp.select_prev_item()
       elseif luasnip.jumpable(-1) then
@@ -237,45 +245,39 @@ cmp.setup({
       else
         fallback()
       end
-    end, { 'i', 's' }),
+    end, { "i", "s" }),
   }),
   sources = get_completion_sources(),
+  sorting = {
+    priority_weight = 2,
+    comparators = {
+      cmp.config.compare.exact,
+      cmp.config.compare.score,
+      cmp.config.compare.kind,
+      cmp.config.compare.snippet,
+      cmp.config.compare.sort_text,
+      cmp.config.compare.length,
+      cmp.config.compare.order,
+    },
+  },
   formatting = {
     format = function(entry, vim_item)
       local kind_icons = {
-        Text = '📄',
-        Method = 'ƒ',
-        Function = '🔧',
-        Constructor = '⚙️',
-        Field = '📋',
-        Variable = '📦',
-        Class = '📚',
-        Interface = '🎯',
-        Module = '📦',
-        Property = '🔑',
-        Unit = '🧮',
-        Value = '💾',
-        Enum = '📊',
-        Keyword = '🔑',
-        Snippet = '✂️',
-        Color = '🎨',
-        File = '📁',
-        Reference = '🔗',
-        Folder = '📂',
-        EnumMember = '🔢',
-        Constant = '🔐',
-        Struct = '🏗️',
-        Event = '🎉',
-        Operator = '➕',
-        TypeParameter = '🔤',
+        Text = "", Method = "m", Function = "ƒ", Constructor = "",
+        Field = "", Variable = "", Class = "𝓒", Interface = "ﰮ",
+        Module = "", Property = "", Unit = "", Value = "",
+        Enum = "", Keyword = "", Snippet = "", Color = "",
+        File = "", Reference = "", Folder = "", EnumMember = "",
+        Constant = "", Struct = "פּ", Event = "", Operator = "+",
+        TypeParameter = "𝙏",
       }
-      vim_item.kind = (kind_icons[vim_item.kind] or "") .. ' ' .. vim_item.kind
+      vim_item.kind = kind_icons[vim_item.kind] or "●"
       vim_item.menu = ({
-        nvim_lsp = '[LSP]',
-        luasnip = '[Snippet]',
-        buffer = '[Buffer]',
-        path = '[Path]',
-        cmdline = '[Cmd]',
+        nvim_lsp = "[LSP]",
+        luasnip = "[Snippet]",
+        buffer = "[Buffer]",
+        path = "[Path]",
+        cmdline = "[Cmd]",
       })[entry.source.name]
       return vim_item
     end,

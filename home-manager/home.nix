@@ -9,9 +9,7 @@
   home = {
     username = "surtsev";
     homeDirectory = "/home/surtsev";
-    stateVersion = "25.05";
-
-    
+    stateVersion = "25.05";    
 
     packages = with pkgs; [
       # Terminal utilities
@@ -23,6 +21,7 @@
       yazi
       gh
       tldr
+      cava
 
       # Python ecosystem
       python313
@@ -54,6 +53,11 @@
       bat
       eza
       jq
+
+      telegram-desktop
+      obsidian
+      discord
+      yandex-music
     ];
   };
 
@@ -133,8 +137,9 @@
       abbr -a cat "bat "
       abbr -a cd z
       abbr -a vim nvim
-      abbr -a nix-switch "sudo nixos-rebuild switch"
-      abbr -a hm-switch "home-manager switch --flake ~/.config/home-manager"
+      abbr -a update "sh update.sh"
+      abbr -a ns "sudo nixos-rebuild switch"
+      abbr -a hs "home-manager switch --flake ~/.config/home-manager"
       
       # Functions
       function fish_greeting
