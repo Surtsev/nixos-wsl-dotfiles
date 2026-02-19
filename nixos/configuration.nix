@@ -107,6 +107,7 @@
   programs.fish.enable = true;
   programs.nix-ld.enable = true;
   programs.amnezia-vpn.enable = true;
+  programs.steam.enable = true;
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
