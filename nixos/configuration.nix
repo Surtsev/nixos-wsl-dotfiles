@@ -13,6 +13,8 @@
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.kernelPackages = pkgs.linuxPackages_6_12;
+  boot.kernelParams = ["i915.enable_guc=3" "i915.force_probe=46a3"];
 
   networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -90,7 +92,7 @@
   users.users.surtsev = {
     isNormalUser = true;
     description = "Tom Surtsev";
-    extraGroups = [ "networkmanager" "wheel" "docker" "podman"];
+    extraGroups = [ "networkmanager" "wheel" "docker" "podman" "video" "audio" "render"];
     shell = pkgs.fish;
     packages = with pkgs; [
       kdePackages.kate
@@ -118,7 +120,15 @@
     podman docker compose2nix
     w3m
     zip unzip
+    wl-clipboard
+    linuxPackages_6_12.kernel.dev
 
+    gcc clang lld llvm
+    gnumake cmake pkg-config binutils binutils-unwrapped
+    bc flex bison openssl pahole elfutils cpio dwarfdump libelf
+    perl python3 gnum4 gengetopt xmlto kmod docbook_xsl docbook_xml_dtd_42 docbook_xml_dtd_44
+    strace gdb ltrace valgrind
+    rustc cargo 
   ];
   fonts = {
     packages = with pkgs; [
@@ -135,6 +145,13 @@
         serif = [ "Noto Serif" ];
       };
     };
+  };
+
+  environment.etc."kernel-build".source = "${pkgs.linuxPackages_6_12.kernel.dev}/lib/modules";
+  environment.variables.KERNEL_DIR = "${pkgs.linuxPackages_6_12.kernel.dev}/lib/modules/6.12.70/build";
+
+  environment.sessionVariables = {
+    LIBVA_DRIVER_NAME = "iHD";
   };
 
   # Some programs need SUID wrappers, can be configured further or are

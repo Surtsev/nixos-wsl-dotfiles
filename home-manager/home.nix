@@ -130,6 +130,8 @@
       # Set up environment
       set -gx EDITOR nvim
       set -gx PATH $PATH $HOME/.cargo/bin $HOME/go/bin
+      set KERNEL_DIR /nix/store/3qdgppfhdvhgr2h25f13lfds43sci1zd-linux-6.12.70-dev/lib/modules/6.12.70/build
+
       
       # Abbreviations (like aliases but smarter)
       abbr -a ls "eza --icons"

@@ -30,4 +30,20 @@
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware = {
+    bluetooth = {
+      enable = true;
+      settings.General.Experimental = true;
+    };
+    graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        intel-media-driver
+        vpl-gpu-rt
+        intel-compute-runtime
+      ];
+    };
+    enableRedistributableFirmware = true;
+  };
+  services.xserver.videoDrivers = ["modesetting"];
 }
