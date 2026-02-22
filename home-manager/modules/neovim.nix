@@ -76,7 +76,7 @@ set hlsearch
 set splitbelow
 set splitright
 set clipboard=unnamedplus
-set completeopt=menu,menuone,noselect
+set completeopt=menu,menuone,noinsert,noselect
 set updatetime=300
 set signcolumn=yes
 set cmdheight=2
@@ -135,11 +135,6 @@ nnoremap <leader>fh <cmd>Telescope help_tags<cr>
 nnoremap <leader>fd <cmd>Telescope diagnostics<cr>
 
 " ============================================================================
-" KEY MAPPINGS - AUTOCOMPLETE
-" ============================================================================
-inoremap <silent><expr> <C-Space> (col('.')==1 && getline('.')=~'^\s*$'?'<C-h>':"")."\<C-x>\<C-o>"
-
-" ============================================================================
 " KEY MAPPINGS - LSP
 " ============================================================================
 nnoremap <leader>gd <cmd>lua vim.lsp.buf.definition()<CR>
@@ -182,6 +177,11 @@ let g:airline_powerline_fonts = 0
       vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
       vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
       vim.api.nvim_set_hl(0, "LineNr", { bg = "none" })
+
+      vim.api.nvim_set_hl(0, "CmpBorder", {
+        fg = "#83a598",  -- gruvbox blue
+        bg = "#32302f",
+      })
 
       vim.g.direnv_silent = 1
       vim.g.direnv_always = 1
@@ -237,64 +237,61 @@ let g:airline_powerline_fonts = 0
       -- ========================================================================
       local cmp = require("cmp")
       local luasnip = require("luasnip")
+
       require("luasnip.loaders.from_vscode").lazy_load()
 
-      local function get_completion_sources()
-        return {
-          { name = "nvim_lsp" },
-          { name = "luasnip" },
-          { name = "buffer", keyword_length = 3 },
-          { name = "path" },
-          { name = "cmdline" },
-        }
-      end
-
       cmp.setup({
-        completion = { autocomplete = false },
+        -- Автокомплит включён
+        completion = {
+          autocomplete = { cmp.TriggerEvent.TextChanged },
+          preselect = cmp.PreselectMode.Item,
+        },
+
         snippet = {
           expand = function(args)
             luasnip.lsp_expand(args.body)
           end,
         },
+
         window = {
           completion = {
             border = "rounded",
-            winhighlight = "Normal:Pmenu,FloatBorder:Pmenu, CursorLine:PmenuSel,Search:PmenuSel",
+            winhighlight = "Normal:CmpPmenu,FloatBorder:CmpBorder,CursorLine:PmenuSel,Search:None",
           },
           documentation = {
             border = "rounded",
-            winhighlight = "Normal:Pmenu,FloatBorder:Pmenu",
+            winhighlight = "Normal:CmpPmenu,FloatBorder:CmpBorder",
           },
         },
-        mapping = cmp.mapping.preset.insert({
-          ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-          ["<C-f>"] = cmp.mapping.scroll_docs(4),
-          ["<C-Space>"] = cmp.mapping.complete(),
-          ["<C-e>"] = cmp.mapping.abort(),
-          ["<Esc>"] = cmp.mapping.abort(),
-          ["<CR>"] = cmp.mapping.confirm({ select = false }),
-          ["<Tab>"] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_next_item()
-            elseif luasnip.expand_or_jumpable() then
-              luasnip.expand_or_jump()
-            else
-              fallback()
-            end
-          end, { "i", "s" }),
-          ["<S-Tab>"] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_prev_item()
-            elseif luasnip.jumpable(-1) then
-              luasnip.jump(-1)
-            else
-              fallback()
-            end
-          end, { "i", "s" }),
-        }),
-        sources = get_completion_sources(),
-      })
 
+        mapping = {
+          ["<CR>"] = cmp.mapping.confirm({ select = true }),
+          ["<C-e>"] = cmp.mapping.abort(),
+
+          -- Ручное открытие (опционально)
+          ["<C-Space>"] = cmp.mapping.complete(),
+        },
+
+        -- Показывать только если предыдущий символ — буква/цифра/_
+        enabled = function()
+          local col = vim.fn.col(".") - 1
+          if col <= 0 then
+            return false
+          end
+
+          local line = vim.fn.getline(".")
+          local prev_char = line:sub(col, col)
+
+          return prev_char:match("[%w_]") ~= nil
+        end,
+
+        sources = {
+          { name = "nvim_lsp" },
+          { name = "luasnip" },
+          { name = "buffer", keyword_length = 3 },
+          { name = "path" },
+        },
+      })
       -- ========================================================================
       -- LSP CAPABILITIES + ON_ATTACH (ИСПРАВЛЕН supports_method)
       -- ========================================================================
@@ -393,9 +390,97 @@ let g:airline_powerline_fonts = 0
         indent = { enable = true },
       })
 
-      require('nvim-autopairs').setup({ check_ts = true })
+      require('nvim-autopairs').setup({
+        check_ts = true,
+        disable_filetype = { "TelescopePrompt", "vim" },
+        fast_wrap = {},
+        map_cr = false,  -- отключаем собственный маппинг Enter
+      })
+
       local cmp_autopairs = require('nvim-autopairs.completion.cmp')
-      cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
+      cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done({ map_char = { tex = "" } }))
+
+      -- Удаляем старые маппинги
+      pcall(vim.keymap.del, 'i', '<Tab>')
+      pcall(vim.keymap.del, 'i', '<S-Tab>')
+      pcall(vim.keymap.del, 'i', '<Down>')
+      pcall(vim.keymap.del, 'i', '<Up>')
+      pcall(vim.keymap.del, 'i', '<C-n>')
+      pcall(vim.keymap.del, 'i', '<C-p>')
+
+      -- Tab - навигация или вставка табуляции
+      vim.keymap.set('i', '<Tab>', function()
+        if cmp.visible() then
+          -- Просто перемещаем выделение, ничего не подтверждаем
+          cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+          -- Возвращаем nil, так как это не expr маппинг
+          return
+        elseif luasnip.expand_or_jumpable() then
+          luasnip.expand_or_jump()
+          return
+        else
+          -- Вставляем табуляцию
+          vim.api.nvim_put({ '\t' }, 'c', false, true)
+        end
+      end, { noremap = true, silent = true })
+
+      -- Shift-Tab - навигация вверх
+      vim.keymap.set('i', '<S-Tab>', function()
+        if cmp.visible() then
+          cmp.select_prev_item({ behavior = cmp.SelectBehavior.Select })
+          return
+        elseif luasnip.jumpable(-1) then
+          luasnip.jump(-1)
+          return
+        end
+        -- Shift-Tab обычно ничего не делает, просто игнорируем
+      end, { noremap = true, silent = true })
+
+      -- Стрелки и Ctrl+n/p - только навигация
+      vim.keymap.set('i', '<Down>', function()
+        if cmp.visible() then
+          cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+        else
+          -- Передаём стрелку дальше
+          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Down>', true, false, true), 'n', false)
+        end
+      end, { noremap = true, silent = true })
+
+      vim.keymap.set('i', '<Up>', function()
+        if cmp.visible() then
+          cmp.select_prev_item({ behavior = cmp.SelectBehavior.Select })
+        else
+          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Up>', true, false, true), 'n', false)
+        end
+      end, { noremap = true, silent = true })
+
+      vim.keymap.set('i', '<C-n>', function()
+        if cmp.visible() then
+          cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+        else
+          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<C-n>', true, false, true), 'n', false)
+        end
+      end, { noremap = true, silent = true })
+
+      vim.keymap.set('i', '<C-p>', function()
+        if cmp.visible() then
+          cmp.select_prev_item({ behavior = cmp.SelectBehavior.Select })
+        else
+          vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<C-p>', true, false, true), 'n', false)
+        end
+      end, { noremap = true, silent = true })
+
+      -- Enter - подтверждение выбранного элемента
+      vim.keymap.set('i', '<CR>', function()
+        if cmp.visible() then
+          -- Подтверждаем выбранный элемент
+          if cmp.confirm({ select = true, behavior = cmp.ConfirmBehavior.Replace }) then
+            return
+          end
+        end
+        -- Если меню не видно или подтверждение не удалось, вставляем Enter
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, false, true), 'n', false)
+      end, { noremap = true, silent = true })
     '';
   };
 }
