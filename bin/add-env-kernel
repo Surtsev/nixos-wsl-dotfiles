@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+cp $HOME/dotfiles/templates/kernel-dev/envrc ./.envrc
+direnv allow

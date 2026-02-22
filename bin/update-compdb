@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Скрипт для генерации/восстановления compile_commands.json в текущем проекте
+# Автоматически определяет версию текущего ядра и правильный путь в NixOS
+
+set -euo pipefail
+
+PROJECT_ROOT=$(pwd)
+PROJECT_NAME=$(basename "$PROJECT_ROOT")
+CACHE_BASE="$HOME/.cache/linux-modules"
+CACHE_DIR="$CACHE_BASE/$PROJECT_NAME"
+mkdir -p "$CACHE_DIR"
+
+CACHED_COMPDB="$CACHE_DIR/compile_commands.json"
+LINK_PATH="$PROJECT_ROOT/compile_commands.json"
+
+# Определяем версию текущего ядра
+KERNEL_VERSION=$(uname -r)
+echo "Kernel version: $KERNEL_VERSION"
+
+# Ищем путь к исходникам ядра в /nix/store
+# Сначала пробуем найти через /run/current-system
+if [ -L "/run/current-system/kernel" ]; then
+    # Если есть симлинк, используем его
+    KERNEL_BUILD_PATH="/run/current-system/kernel/lib/modules/${KERNEL_VERSION}/build"
+elif [ -d "/run/current-system/kernel-modules" ]; then
+    # Альтернативный путь в NixOS
+    KERNEL_BUILD_PATH="/run/current-system/kernel-modules/lib/modules/${KERNEL_VERSION}/build"
+else
+    # Если ничего не нашли, ищем в /nix/store напрямую
+    KERNEL_STORE_PATH=$(find /nix/store -maxdepth 1 -type d -name "*linux-${KERNEL_VERSION}*" 2>/dev/null | head -n1)
+    if [ -n "$KERNEL_STORE_PATH" ]; then
+        KERNEL_BUILD_PATH="$KERNEL_STORE_PATH/lib/modules/${KERNEL_VERSION}/build"
+    else
+        echo "Error: Cannot find kernel sources for version $KERNEL_VERSION"
+        exit 1
+    fi
+fi
+
+echo "Kernel build path: $KERNEL_BUILD_PATH"
+
+# Проверяем, существует ли путь
+if [ ! -d "$KERNEL_BUILD_PATH" ]; then
+    echo "Error: Kernel build path not found: $KERNEL_BUILD_PATH"
+    echo "Trying to find alternative path..."
+
+    # Последняя попытка: ищем все возможные пути
+    FOUND_PATH=$(find /nix/store -name "build" -path "*/lib/modules/${KERNEL_VERSION}/*" 2>/dev/null | head -n1)
+    if [ -n "$FOUND_PATH" ]; then
+        KERNEL_BUILD_PATH="$FOUND_PATH"
+        echo "Found alternative path: $KERNEL_BUILD_PATH"
+    else
+        echo "Error: Could not find kernel build path for version $KERNEL_VERSION"
+        echo "Please check that the kernel headers are installed."
+        exit 1
+    fi
+fi
+
+generate_with_bear() {
+    echo "Generating compile_commands.json for kernel ${KERNEL_VERSION}..."
+    if ! command -v bear &>/dev/null; then
+        echo "Error: bear is not installed. Please install bear (nix profile install nixpkgs#bear)"
+        exit 1
+    fi
+
+    # Передаём KDIR явно, переопределяя значение из Makefile
+    bear --output "$CACHED_COMPDB" -- make KDIR="$KERNEL_BUILD_PATH"
+
+    echo "Generated: $CACHED_COMPDB"
+}
+
+restore_link() {
+    if [ -f "$CACHED_COMPDB" ]; then
+        ln -sf "$CACHED_COMPDB" "$LINK_PATH"
+        echo "Symlink restored: $LINK_PATH -> $CACHED_COMPDB"
+    else
+        echo "No cached compile_commands.json found. Run 'update-compdb' first."
+        exit 1
+    fi
+}
+
+# Проверяем аргументы
+if [ "${1:-}" = "--force" ]; then
+    generate_with_bear
+    restore_link
+    exit 0
+fi
+
+if [ -L "$LINK_PATH" ] && [ -f "$(readlink "$LINK_PATH")" ]; then
+    echo "compile_commands.json is already valid."
+    exit 0
+fi
+
+if [ -f "$CACHED_COMPDB" ]; then
+    restore_link
+else
+    generate_with_bear
+    restore_link
+fi

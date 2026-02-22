@@ -22,6 +22,7 @@
       gh
       tldr
       cava
+      direnv
 
       # Python ecosystem
       python313
@@ -135,8 +136,9 @@
       # Set up environment
       set -gx EDITOR nvim
       set -gx PATH $PATH $HOME/.cargo/bin $HOME/go/bin
-      set KERNEL_DIR /nix/store/3qdgppfhdvhgr2h25f13lfds43sci1zd-linux-6.12.70-dev/lib/modules/6.12.70/build
-
+      set -gx PATH $PATH $HOME/dotfiles/bin
+      set KERNEL_DIR $(find /nix/store -name "*linux-*-dev" -type d | grep $(uname -r))
+  		set KERNEL_RELEASE $(uname --kernel-release)
       set -g fish_color_autosuggestion brblack
       
       # Abbreviations (like aliases but smarter)
@@ -176,7 +178,7 @@
             echo "Unknown file type for $filename"
         end
       end
-      
+
       # fzf integration
       fzf --fish | source
     '';
