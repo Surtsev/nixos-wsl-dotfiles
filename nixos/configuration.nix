@@ -56,6 +56,12 @@
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
+  services.ollama = {
+    enable = true;
+    package = pkgs.ollama;
+  };
+
+
   qt = {
     enable = true;
     platformTheme = "kde";  # Автоматически использует тему Plasma (Breeze или твою кастомную)
@@ -107,7 +113,21 @@
   programs.fish.enable = true;
   programs.nix-ld.enable = true;
   programs.amnezia-vpn.enable = true;
-  programs.steam.enable = true;
+  programs.steam = {
+    enable = true;
+    extraPackages = with pkgs; [
+      kdePackages.breeze
+    ];
+    package = pkgs.steam.override {
+        extraPkgs = pkgs': with pkgs'; [
+          kdePackages.breeze
+        ];
+        extraEnv = {
+          XCURSOR_THEME = "breeze-dark";  # твой вариант, или "breeze_cursors"
+          XCURSOR_SIZE  = "24";
+        };
+    };
+  };
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -116,7 +136,7 @@
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     neovim neovim-qt 
-    wget curl git fish w3m
+    wget curl git fish w3m tldr
     home-manager
     podman docker compose2nix
     w3m
@@ -124,8 +144,8 @@
     wl-clipboard
     linuxPackages_6_12.kernel.dev
 
-    gcc clang lld llvm
-    gnumake cmake pkg-config binutils binutils-unwrapped
+    gcc clang lld llvm clang-tools
+    gnumake cmake pkg-config binutils binutils-unwrapped bear
     bc flex bison openssl pahole elfutils cpio dwarfdump libelf
     perl python3 gnum4 gengetopt xmlto kmod docbook_xsl docbook_xml_dtd_42 docbook_xml_dtd_44
     strace gdb ltrace valgrind

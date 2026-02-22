@@ -117,6 +117,11 @@
 
       set -g default-command "exec fish"
 
+      set-option -sg escape-time 10
+      set-option -g focus-events on
+
+      set -g default-terminal "screen-256color"
+
       set -g mouse on
       set -g status-style "bg=#1e1e2e fg=#cdd6f4"
       set -g window-status-current-style "bg=#89b4fa fg=#1e1e2e bold"
@@ -132,6 +137,7 @@
       set -gx PATH $PATH $HOME/.cargo/bin $HOME/go/bin
       set KERNEL_DIR /nix/store/3qdgppfhdvhgr2h25f13lfds43sci1zd-linux-6.12.70-dev/lib/modules/6.12.70/build
 
+      set -g fish_color_autosuggestion brblack
       
       # Abbreviations (like aliases but smarter)
       abbr -a ls "eza --icons"

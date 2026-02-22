@@ -29,6 +29,7 @@
       nvim-treesitter
       nvim-autopairs
       conform-nvim
+      direnv-vim
     ];
 
     extraPackages = with pkgs; [
@@ -36,17 +37,23 @@
       rust-analyzer
       phpactor
       clang-tools
+      ccls
       nodePackages.typescript-language-server
       nodePackages.vscode-langservers-extracted
       marksman
       ruff
       gofumpt
       rustfmt
-      php
+      phpPackages.php-cs-fixer
       prettierd
       shellcheck
       stylua
       shfmt
+      fswatch
+      fd
+      inotify-tools
+      nodejs_20
+      tree-sitter
     ];
 
     extraConfig = ''
@@ -170,374 +177,225 @@ let g:airline_powerline_fonts = 0
 
     extraLuaConfig = ''
 
-vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
-vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
-vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
-vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
-vim.api.nvim_set_hl(0, "LineNr", { bg = "none" })
+      vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
+      vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
+      vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
+      vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
+      vim.api.nvim_set_hl(0, "LineNr", { bg = "none" })
 
-  -- ========================================================================
-  -- NVIM-TREE: FILE EXPLORER (ПЕРВЫМ!)
-  -- ========================================================================
-  require('nvim-tree').setup({
-    view = {
-      width = 30,
-      side = 'left',
-    },
-    ...
-  })
-      
--- NVIM-CMP AUTOCOMPLETE CONFIGURATION
-local cmp = require("cmp")
-local luasnip = require("luasnip")
-require("luasnip.loaders.from_vscode").lazy_load()
+      vim.g.direnv_silent = 1
+      vim.g.direnv_always = 1
 
-local function get_completion_sources()
-  return {
-    { name = "nvim_lsp" },
-    { name = "luasnip" },
-    { name = "buffer", keyword_length = 3 },
-    { name = "path" },
-    { name = "cmdline" },
-  }
-end
+      -- Автокоманда: direnv allow после правки .envrc
+      vim.api.nvim_create_autocmd("BufWritePost", {
+        pattern = ".envrc",
+        callback = function()
+          vim.cmd("silent !direnv allow " .. vim.fn.expand("%:p:h"))
+          vim.cmd("redraw!")
+        end,
+      })
 
-cmp.setup({
-  completion = {
-    autocomplete = false,  -- ✅ Отключить попап на Tab/пробел/InsertEnter
-  },
-  snippet = {
-    expand = function(args)
-      luasnip.lsp_expand(args.body)
-    end,
-  },
-  window = {
-    completion = {
-      border = "rounded",
-      winhighlight = "Normal:Pmenu,FloatBorder:Pmenu, CursorLine:PmenuSel,Search:PmenuSel",  -- Белый текст из ваших hl
-    },
-    documentation = {
-      border = "rounded",
-      winhighlight = "Normal:Pmenu,FloatBorder:Pmenu",
-    },
-  },
-  mapping = cmp.mapping.preset.insert({
-    ["<C-b>"] = cmp.mapping.scroll_docs(-4),
-    ["<C-f>"] = cmp.mapping.scroll_docs(4),
-    ["<C-Space>"] = cmp.mapping.complete(),  -- ✅ Ручной вызов после букв
-    ["<C-e>"] = cmp.mapping.abort(),
-    ["<Esc>"] = cmp.mapping.abort(),
-    ["<CR>"] = cmp.mapping.confirm({ select = false }),  -- Без авто-выбора
-    ["<Tab>"] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_next_item()
-      elseif luasnip.expand_or_jumpable() then
-        luasnip.expand_or_jump()
-      else
-        fallback()  -- ✅ Чистый Tab (отступ/пробел)
+      -- ========================================================================
+      -- NVIM-TREE: FILE EXPLORER (ПЕРВЫМ!)
+      -- ========================================================================
+      require('nvim-tree').setup({
+        view = {
+          width = 30,
+          side = 'left',
+        },
+        ...
+      })
+      -- ========================================================================
+      -- DIAGNOSTICS: НОВЫЙ ФОРМАТ (без sign_define!)
+      -- ========================================================================
+      vim.diagnostic.config({
+        virtual_text = {
+          prefix = '●',
+          spacing = 4,
+        },
+        signs = {
+          text = {
+            [vim.diagnostic.severity.ERROR] = "E",
+            [vim.diagnostic.severity.WARN] = "W",
+            [vim.diagnostic.severity.HINT] = "H",
+            [vim.diagnostic.severity.INFO] = "I",
+          },
+        },
+        underline = true,
+        update_in_insert = false,
+        severity_sort = true,
+      })
+
+      -- Подсветка цветов (без sign_define)
+      vim.api.nvim_set_hl(0, 'DiagnosticSignError', { fg = '#ff5555' })
+      vim.api.nvim_set_hl(0, 'DiagnosticSignWarn', { fg = '#ffaa00' })
+      vim.api.nvim_set_hl(0, 'DiagnosticSignHint', { fg = '#00ffff' })
+      vim.api.nvim_set_hl(0, 'DiagnosticSignInfo', { fg = '#5b9bd5' })
+
+      -- ========================================================================
+      -- NVIM-CMP AUTOCOMPLETE CONFIGURATION
+      -- ========================================================================
+      local cmp = require("cmp")
+      local luasnip = require("luasnip")
+      require("luasnip.loaders.from_vscode").lazy_load()
+
+      local function get_completion_sources()
+        return {
+          { name = "nvim_lsp" },
+          { name = "luasnip" },
+          { name = "buffer", keyword_length = 3 },
+          { name = "path" },
+          { name = "cmdline" },
+        }
       end
-    end, { "i", "s" }),
-    ["<S-Tab>"] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_prev_item()
-      elseif luasnip.jumpable(-1) then
-        luasnip.jump(-1)
-      else
-        fallback()
-      end
-    end, { "i", "s" }),
-  }),
-  sources = get_completion_sources(),
-  sorting = {
-    priority_weight = 2,
-    comparators = {
-      cmp.config.compare.exact,
-      cmp.config.compare.score,
-      cmp.config.compare.kind,
-      cmp.config.compare.snippet,
-      cmp.config.compare.sort_text,
-      cmp.config.compare.length,
-      cmp.config.compare.order,
-    },
-  },
-  formatting = {
-    format = function(entry, vim_item)
-      local kind_icons = {
-        Text = "", Method = "m", Function = "ƒ", Constructor = "",
-        Field = "", Variable = "", Class = "𝓒", Interface = "ﰮ",
-        Module = "", Property = "", Unit = "", Value = "",
-        Enum = "", Keyword = "", Snippet = "", Color = "",
-        File = "", Reference = "", Folder = "", EnumMember = "",
-        Constant = "", Struct = "פּ", Event = "", Operator = "+",
-        TypeParameter = "𝙏",
+
+      cmp.setup({
+        completion = { autocomplete = false },
+        snippet = {
+          expand = function(args)
+            luasnip.lsp_expand(args.body)
+          end,
+        },
+        window = {
+          completion = {
+            border = "rounded",
+            winhighlight = "Normal:Pmenu,FloatBorder:Pmenu, CursorLine:PmenuSel,Search:PmenuSel",
+          },
+          documentation = {
+            border = "rounded",
+            winhighlight = "Normal:Pmenu,FloatBorder:Pmenu",
+          },
+        },
+        mapping = cmp.mapping.preset.insert({
+          ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+          ["<C-f>"] = cmp.mapping.scroll_docs(4),
+          ["<C-Space>"] = cmp.mapping.complete(),
+          ["<C-e>"] = cmp.mapping.abort(),
+          ["<Esc>"] = cmp.mapping.abort(),
+          ["<CR>"] = cmp.mapping.confirm({ select = false }),
+          ["<Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_next_item()
+            elseif luasnip.expand_or_jumpable() then
+              luasnip.expand_or_jump()
+            else
+              fallback()
+            end
+          end, { "i", "s" }),
+          ["<S-Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_prev_item()
+            elseif luasnip.jumpable(-1) then
+              luasnip.jump(-1)
+            else
+              fallback()
+            end
+          end, { "i", "s" }),
+        }),
+        sources = get_completion_sources(),
+      })
+
+      -- ========================================================================
+      -- LSP CAPABILITIES + ON_ATTACH (ИСПРАВЛЕН supports_method)
+      -- ========================================================================
+      local capabilities = require('cmp_nvim_lsp').default_capabilities()
+      capabilities.workspace = {
+        didChangeWatchedFiles = { dynamicRegistration = true },
       }
-      vim_item.kind = kind_icons[vim_item.kind] or "●"
-      vim_item.menu = ({
-        nvim_lsp = "[LSP]",
-        luasnip = "[Snippet]",
-        buffer = "[Buffer]",
-        path = "[Path]",
-        cmdline = "[Cmd]",
-      })[entry.source.name]
-      return vim_item
-    end,
-  },
-})
 
--- ========================================================================
--- NVIM-LSPCONFIG: vim.lsp.config API
--- ========================================================================
-local capabilities = require('cmp_nvim_lsp').default_capabilities()
-
-local function on_attach(client, bufnr)
-  if client.supports_method('textDocument/formatting') then
-    vim.api.nvim_create_autocmd('BufWritePre', {
-      group = vim.api.nvim_create_augroup('LSPFormatting', { clear = true }),
-      buffer = bufnr,
-      callback = function()
-        vim.lsp.buf.format()
-      end,
-    })
-  end
-end
-
--- Python (Pyright)
-vim.lsp.config('pyright', {
-  cmd = {'pyright-langserver', '--stdio'},
-  root_markers = {'pyrightconfig.json', 'pyproject.toml', '.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-  settings = {
-    python = {
-      analysis = {
-        typeCheckingMode = 'basic',
-        autoSearchPaths = true,
-        useLibraryCodeForTypes = true,
-      }
-    }
-  }
-})
-
--- Go (Gopls)
-vim.lsp.config('gopls', {
-  cmd = {'gopls'},
-  root_markers = {'go.mod', '.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-  settings = {
-    gopls = {
-      usePlaceholders = true,
-      completeUnimported = true,
-    }
-  }
-})
-
--- Rust (Rust Analyzer)
-vim.lsp.config('rust_analyzer', {
-  cmd = {'rust-analyzer'},
-  root_markers = {'Cargo.toml', '.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-  settings = {
-    ['rust-analyzer'] = {
-      checkOnSave = {
-        command = 'clippy'
-      }
-    }
-  }
-})
-
--- PHP (PHPActor)
-vim.lsp.config('phpactor', {
-  cmd = {'phpactor', 'language-server'},
-  root_markers = {'composer.json', '.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-
--- C/C++ (Clangd)
-vim.lsp.config('clangd', {
-  cmd = {'clangd'},
-  root_markers = {'compile_commands.json', '.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-
--- TypeScript/JavaScript
-vim.lsp.config('ts_ls', {
-  cmd = {'typescript-language-server', '--stdio'},
-  root_markers = {'package.json', 'tsconfig.json', '.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-
--- HTML
-vim.lsp.config('html', {
-  cmd = {'html-languageserver', '--stdio'},
-  root_markers = {'.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-
--- CSS
-vim.lsp.config('cssls', {
-  cmd = {'css-languageserver', '--stdio'},
-  root_markers = {'.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-
--- JSON
-vim.lsp.config('jsonls', {
-  cmd = {'json-languageserver', '--stdio'},
-  root_markers = {'.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-
--- Markdown
-vim.lsp.config('marksman', {
-  cmd = {'marksman'},
-  root_markers = {'.git'},
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-
--- ========================================================================
--- CONFORM.NVIM
--- ========================================================================
-require('conform').setup({
-  formatters_by_ft = {
-    python = { 'black', 'isort' },
-    go = { 'gofumpt' },
-    rust = { 'rustfmt' },
-    php = { 'php' },
-    c = { 'clang_format' },
-    cpp = { 'clang_format' },
-    javascript = { 'prettierd' },
-    typescript = { 'prettierd' },
-    jsx = { 'prettierd' },
-    tsx = { 'prettierd' },
-    html = { 'prettierd' },
-    css = { 'prettierd' },
-    json = { 'prettierd' },
-    markdown = { 'prettierd' },
-    yaml = { 'prettierd' },
-    lua = { 'stylua' },
-    bash = { 'shfmt' },
-    sh = { 'shfmt' },
-  },
-  format_on_save = {
-    timeout_ms = 5000,
-    lsp_fallback = true,
-  },
-})
-
--- ========================================================================
--- DIAGNOSTICS: ПОДСВЕТКА ОШИБОК И ПРЕДУПРЕЖДЕНИЙ
--- ========================================================================
-vim.diagnostic.config({
-  virtual_text = {
-    prefix = '●',
-    spacing = 4,
-  },
-  signs = true,
-  underline = true,
-  update_in_insert = false,
-  severity_sort = true,
-})
-
--- Кастомные иконки для диагностики
-local signs = { Error = ' ', Warn = ' ', Hint = ' ', Info = ' ' }
-for type, icon in pairs(signs) do
-  local hl = 'DiagnosticSign' .. type
-  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-end
-
--- Подсветка цветов ошибок
-vim.api.nvim_set_hl(0, 'DiagnosticSignError', { fg = '#ff5555' })
-vim.api.nvim_set_hl(0, 'DiagnosticSignWarn', { fg = '#ffaa00' })
-vim.api.nvim_set_hl(0, 'DiagnosticSignHint', { fg = '#00ffff' })
-vim.api.nvim_set_hl(0, 'DiagnosticSignInfo', { fg = '#5b9bd5' })
-
-
--- ========================================================================
--- NVIM-TREESITTER
--- ========================================================================
-require('nvim-treesitter.configs').setup({
-  highlight = {
-    enable = true,
-    additional_vim_regex_highlighting = false,
-  },
-  indent = {
-    enable = true,
-  },
-})
-
--- ========================================================================
--- NVIM-AUTOPAIRS
--- ========================================================================
-require('nvim-autopairs').setup({
-  check_ts = true,
-})
-
-local cmp_autopairs = require('nvim-autopairs.completion.cmp')
-cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
-
--- ========================================================================
--- АВТОМАТИЧЕСКОЕ ОБНАРУЖЕНИЕ РАСШИРЕНИЙ
--- ========================================================================
-vim.api.nvim_create_autocmd({'BufRead', 'BufNewFile'}, {
-  callback = function(args)
-    local buf = args.buf
-    local filename = vim.api.nvim_buf_get_name(buf)
-    local ext = vim.fn.fnamemodify(filename, ':e'):lower()
-
-    local ft_map = {
-      py = 'python',
-      go = 'go',
-      rs = 'rust',
-      php = 'php',
-      c = 'c',
-      h = 'c',
-      cpp = 'cpp',
-      cc = 'cpp',
-      cxx = 'cpp',
-      hpp = 'cpp',
-      js = 'javascript',
-      jsx = 'jsx',
-      ts = 'typescript',
-      tsx = 'tsx',
-      html = 'html',
-      css = 'css',
-      md = 'markdown',
-      json = 'json',
-      yaml = 'yaml',
-      yml = 'yaml',
-      bash = 'bash',
-      sh = 'bash',
-      lua = 'lua',
-      nix = 'nix',
-    }
-
-    if ft_map[ext] then
-      vim.bo.filetype = ft_map[ext]
-    else
-      if not vim.bo.filetype or vim.bo.filetype == "" then
-        local first_line = vim.fn.getline(1)
-        if string.find(first_line, '^#!') then
-          if string.find(first_line, 'python') then
-            vim.bo.filetype = 'python'
-          elseif string.find(first_line, 'bash') or string.find(first_line, 'sh') then
-            vim.bo.filetype = 'bash'
-          elseif string.find(first_line, 'node') then
-            vim.bo.filetype = 'javascript'
-          end
+      local function on_attach(client, bufnr)
+        -- ✅ ИСПРАВЛЕНО: client:supports_method (новый синтаксис)
+        if client:supports_method('textDocument/formatting') then
+          vim.api.nvim_create_autocmd('BufWritePre', {
+            group = vim.api.nvim_create_augroup('LSPFormatting', { clear = true }),
+            buffer = bufnr,
+            callback = function()
+              vim.lsp.buf.format()
+            end,
+          })
         end
       end
-    end
-  end,
-})
+
+      vim.lsp.config("pyright", {
+        cmd = { "pyright-langserver", "--stdio" },
+
+        root_dir = vim.fs.root(0, {
+          "pyproject.toml",
+          ".git",
+        }),
+
+        capabilities = capabilities,
+        on_attach = on_attach,
+
+        settings = {
+          python = {
+            venvPath = ".",
+            venv = ".venv",
+            analysis = {
+              typeCheckingMode = "basic",
+              autoSearchPaths = true,
+              useLibraryCodeForTypes = true,
+            },
+          },
+        },
+      })
+      -- Остальные LSP (без изменений)
+      vim.lsp.config('gopls', { cmd = {'gopls'}, root_dir = vim.fs.root(0, {'go.mod', '.git'}), on_attach = on_attach, capabilities = capabilities })
+      vim.lsp.config('rust_analyzer', { cmd = {'rust-analyzer'}, root_dir = vim.fs.root(0, {'Cargo.toml', '.git'}), on_attach = on_attach, capabilities = capabilities })
+      vim.lsp.config('phpactor', { cmd = {'phpactor', 'language-server'}, root_dir = vim.fs.root(0, {'composer.json', '.git'}), on_attach = on_attach, capabilities = capabilities })
+      vim.lsp.config("ccls", {
+        cmd = { 
+          "ccls"
+        },
+        root_dir = vim.fs.root(0, {
+          "compile_commands.json",
+          "compile_flags.txt",
+          ".git",
+        }),
+        capabilities = capabilities,
+        on_attach = on_attach,
+      })
+      vim.lsp.config('ts_ls', { cmd = {'typescript-language-server', '--stdio'}, root_dir = vim.fs.root(0, {'package.json', 'tsconfig.json', '.git'}), on_attach = on_attach, capabilities = capabilities })
+      vim.lsp.config('html', { on_attach = on_attach, capabilities = capabilities })
+      vim.lsp.config('cssls', { on_attach = on_attach, capabilities = capabilities })
+      vim.lsp.config('jsonls', { on_attach = on_attach, capabilities = capabilities })
+      vim.lsp.config('marksman', { on_attach = on_attach, capabilities = capabilities })
+
+      -- АКТИВАЦИЯ LSP
+      vim.lsp.enable('pyright')
+      vim.lsp.enable('gopls')
+      vim.lsp.enable('rust_analyzer')
+      vim.lsp.enable('phpactor')
+      vim.lsp.enable('ccls')
+      vim.lsp.enable('ts_ls')
+      vim.lsp.enable('html')
+      vim.lsp.enable('cssls')
+      vim.lsp.enable('jsonls')
+      vim.lsp.enable('marksman')
+
+      -- ========================================================================
+      -- CONFORM.NVIM, TREESITTER, AUTOPAIRS (без изменений)
+      -- ========================================================================
+      require('conform').setup({
+        formatters_by_ft = {
+          python = { 'black', 'isort' }, go = { 'gofumpt' }, rust = { 'rustfmt' },
+          php = { 'php-cs-fixer' }, c = { 'clang_format' }, cpp = { 'clang_format' },
+          javascript = { 'prettierd' }, typescript = { 'prettierd' }, jsx = { 'prettierd' },
+          tsx = { 'prettierd' }, html = { 'prettierd' }, css = { 'prettierd' },
+          json = { 'prettierd' }, markdown = { 'prettierd' }, yaml = { 'prettierd' },
+          lua = { 'stylua' }, bash = { 'shfmt' }, sh = { 'shfmt' },
+        },
+        format_on_save = { timeout_ms = 5000, lsp_fallback = true },
+      })
+
+      require('nvim-treesitter.configs').setup({
+        highlight = { enable = true, additional_vim_regex_highlighting = false },
+        indent = { enable = true },
+      })
+
+      require('nvim-autopairs').setup({ check_ts = true })
+      local cmp_autopairs = require('nvim-autopairs.completion.cmp')
+      cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
     '';
   };
 }
