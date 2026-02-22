@@ -95,7 +95,8 @@ highlight PmenuSbar ctermbg=8 guibg=#2e2e3e
 highlight NonText guibg=NONE ctermbg=NONE
 highlight Normal guibg=NONE ctermbg=NONE
 highlight NormalFloat  ctermbg=none guibg=none
-highlight FloatBorder  ctermbg=none guibg=none
+highlight FloatBorder  ctermbg=none guifg=#5b9bd5 guibg=none
+highlight CmpBorder    ctermbg=none guifg=#5b9bd5 guibg=none
 highlight SignColumn   ctermbg=none guibg=none
 highlight LineNr       ctermbg=none guibg=none
 highlight CursorLineNr ctermbg=none guibg=none
@@ -179,8 +180,13 @@ let g:airline_powerline_fonts = 0
       vim.api.nvim_set_hl(0, "LineNr", { bg = "none" })
 
       vim.api.nvim_set_hl(0, "CmpBorder", {
-        fg = "#83a598",  -- gruvbox blue
-        bg = "#32302f",
+        fg = "#5b9bd5",  -- такой же синий как PmenuSel
+        bg = "none",
+      })
+      -- рамка документации:
+      vim.api.nvim_set_hl(0, "FloatBorder", {
+        fg = "#5b9bd5",
+        bg = "none",
       })
 
       vim.g.direnv_silent = 1
