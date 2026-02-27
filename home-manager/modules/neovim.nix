@@ -30,6 +30,8 @@
       nvim-autopairs
       conform-nvim
       direnv-vim
+      ollama-nvim
+      render-markdown-nvim
     ];
 
     extraPackages = with pkgs; [
@@ -92,8 +94,8 @@ highlight PmenuThumb ctermbg=7 guibg=#5b9bd5
 highlight PmenuSbar ctermbg=8 guibg=#2e2e3e
 
 " === Transparent background ===
-highlight NonText guibg=NONE ctermbg=NONE
-highlight Normal guibg=NONE ctermbg=NONE
+highlight NonText ctermbg=NONE
+highlight Normal ctermbg=NONE
 highlight NormalFloat  ctermbg=none guibg=none
 highlight FloatBorder  ctermbg=none guifg=#5b9bd5 guibg=none
 highlight CmpBorder    ctermbg=none guifg=#5b9bd5 guibg=none
@@ -172,6 +174,20 @@ let g:airline_powerline_fonts = 0
     '';
 
     extraLuaConfig = ''
+
+      -- Добавляем пути к плагинам из home-manager в runtimepath
+      local plugin_paths = {
+        vim.fn.expand("~/.local/share/nvim/site/pack/home-manager/start"),
+        vim.fn.expand("~/.local/share/nvim/site/pack/home-manager/opt"),
+      }
+      
+      for _, path in ipairs(plugin_paths) do
+        if vim.fn.isdirectory(path) == 1 then
+          for _, plugin in ipairs(vim.fn.glob(path .. "/*", false, true)) do
+            vim.opt.rtp:prepend(plugin)
+          end
+        end
+      end
 
       vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
       vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
@@ -476,18 +492,82 @@ let g:airline_powerline_fonts = 0
         end
       end, { noremap = true, silent = true })
 
-      -- Enter - подтверждение выбранного элемента
       vim.keymap.set('i', '<CR>', function()
         if cmp.visible() then
-          -- Подтверждаем выбранный элемент
           if cmp.confirm({ select = true, behavior = cmp.ConfirmBehavior.Replace }) then
             return
           end
         end
-        -- Если меню не видно или подтверждение не удалось, вставляем Enter
         vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, false, true), 'n', false)
       end, { noremap = true, silent = true })
+
+			require('ollama').setup({
+        model = "qwen2.5-coder:7b",
+        
+        host = "127.0.0.1",
+        port = 11434,  
+        
+        prompts = {
+          explain = {
+            prompt = "Объясни этот код простыми словами: \n```$ftype\n$sel\n```",
+            model = "qwen2.5-coder:7b",            
+          },
+          review = {
+            prompt = "Проведи code review этого фрагмента. Укажи потенциальные проблемы и предложи улучшения: \n```$ftype\n$sel\n```",
+            model = "qwen2.5-coder:7b",
+          },
+          optimize = {
+            prompt = "Оптимизируй этот код для лучшей производительности: \n```$ftype\n$sel\n```",
+            model = "qwen2.5-coder:7b",
+          },
+          tests = {
+            prompt = "Напиши unit-тесты для этого кода: \n```$ftype\n$sel\n```",
+            model = "qwen2.5-coder:7b",
+          },
+          comments = {
+            prompt = "Добавь подробные комментарии к этому коду на русском языке: \n```$ftype\n$sel\n```",
+            model = "qwen2.5-coder:7b",
+          },
+        },
+        
+        window = {
+          width = 0.6,
+          height = 0.4,
+          border = "rounded", 
+        },
+        
+        prefix = "<leader>f",          
+        syntax = true,
+      })
+      
+      local opts = { noremap = true, silent = true }
+      
+      vim.keymap.set('v', '<leader>fe', function()
+        require('ollama').prompt('explain')
+      end, opts)
+      
+      vim.keymap.set('v', '<leader>fr', function()
+				require('ollama').prompt('review')
+      end, opts)
+
+      vim.keymap.set('v', '<leader>fo', function()
+        require('ollama').prompt('optimize')
+      end, opts)
+      
+      vim.keymap.set('v', '<leader>ft', function()
+        require('ollama').prompt('tests')
+      end, opts)
     '';
   };
+  home.file.".config/nvim/ginit.vim".text = ''
+		GuiWindowOpacity 0.5
+  '';
+  # Настройка nvim-qt одинаковая с настройкой обычного nvim
+  home.packages = with pkgs; [
+    # Добавляем nvim-qt, который будет использовать настроенный Neovim
+    (neovim-qt.override { 
+        neovim = config.programs.neovim.finalPackage; 
+    })
+  ];
 }
 

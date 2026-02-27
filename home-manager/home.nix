@@ -23,6 +23,7 @@
       tldr
       cava
       direnv
+      tree
 
       # Python ecosystem
       python313
@@ -55,11 +56,32 @@
       eza
       jq
 
+			ollama
+
       telegram-desktop
       obsidian
       discord
       yandex-music
     ];
+  };
+
+  systemd.user.services.ollama = {
+    Unit = {
+      Description = "Ollama Service";
+      After = ["network-online.target"];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = "${pkgs.ollama}/bin/ollama serve";
+      Restart = "on-failure";
+      RestartSec = 10;
+      WorkingDirectory = "/home/surtsev";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+    Install = {
+			WantedBy = ["default.target"];
+    };
   };
 
   # Git configuration
@@ -69,7 +91,7 @@
       user.name = "Surtsev";
       user.email = "surtsev2006@gmail.com";
       core.editor = "nvim";
-      init.defaultBranch = "main";
+      init.defaultBranch = "master";
     };
   };
 
@@ -94,7 +116,7 @@
   # Tmux configuration
   programs.tmux = {
     enable = true;
-    terminal = "screen-256color";
+    terminal = "xterm-256color";
     baseIndex = 1;
     keyMode = "vi";
     
@@ -116,12 +138,8 @@
       bind -r k select-pane -U
       bind -r l select-pane -R
 
-      set -g default-command "exec fish"
-
       set-option -sg escape-time 10
       set-option -g focus-events on
-
-      set -g default-terminal "screen-256color"
 
       set -g mouse on
       set -g status-style "bg=#1e1e2e fg=#cdd6f4"
@@ -137,10 +155,7 @@
       set -gx EDITOR nvim
       set -gx PATH $PATH $HOME/.cargo/bin $HOME/go/bin
       set -gx PATH $PATH $HOME/dotfiles/bin
-      set KERNEL_DIR $(find /nix/store -name "*linux-*-dev" -type d | grep $(uname -r))
-  		set KERNEL_RELEASE $(uname --kernel-release)
-      set -g fish_color_autosuggestion brblack
-      
+
       # Abbreviations (like aliases but smarter)
       abbr -a ls "eza --icons"
       abbr -a ll "eza -lah --icons"

@@ -56,10 +56,10 @@
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
-  services.ollama = {
-    enable = true;
-    package = pkgs.ollama;
-  };
+  #services.ollama = {
+  #  enable = true;
+  #  package = pkgs.ollama;
+  #};
 
 
   qt = {
@@ -138,7 +138,7 @@
     neovim neovim-qt 
     wget curl git fish w3m tldr
     home-manager
-    podman docker compose2nix
+    podman docker compose2nix winboat freerdp
     w3m
     zip unzip
     wl-clipboard
