@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@niiaassh/ollamacode": "^0.0.9"
+  }
+}

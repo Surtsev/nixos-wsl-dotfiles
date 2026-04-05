@@ -56,22 +56,10 @@
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
-  #services.ollama = {
-  #  enable = true;
-  #  package = pkgs.ollama;
-  #};
-
-  services.open-webui = {
+  services.ollama = {
     enable = true;
-    # Open WebUI автоматически подключится к локальному Ollama
-    # Дополнительные настройки окружения (опционально)
-    environment = {
-      ANONYMIZED_TELEMETRY = "False"; # Отключить телеметрию
-      DO_NOT_TRACK = "True";
-    };
+    package = pkgs.ollama;
   };
-
-
 
   qt = {
     enable = true;
@@ -149,11 +137,15 @@
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.permittedInsecurePackages = [
+                "ventoy-qt5-1.1.10"
+              ];
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     neovim	kitty	ghostty
+    ventoy-full-qt
     wget curl git zsh w3m tldr
     home-manager
     podman docker compose2nix freerdp 
@@ -164,7 +156,6 @@
 
     klassy
 
-    open-webui
 
     gcc clang lld llvm clang-tools
     gnumake cmake pkg-config binutils binutils-unwrapped bear ninja extra-cmake-modules
@@ -172,6 +163,7 @@
     perl python3 gnum4 gengetopt xmlto kmod docbook_xsl docbook_xml_dtd_42 docbook_xml_dtd_44
     strace gdb ltrace valgrind
     rustc cargo 
+    nodejs_24
 
     kdePackages.qtwebsockets
     kdePackages.qtdeclarative

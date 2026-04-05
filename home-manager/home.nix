@@ -16,7 +16,6 @@
       # Terminal utilities
       fastfetch
       git
-      tmux
       zsh
       btop
       yazi
@@ -69,6 +68,7 @@
       telegram-desktop
       obsidian
       discord
+      zoom-us
       yandex-music	spotify
 
       libreoffice-qt-fresh
@@ -97,7 +97,7 @@
       StandardError = "journal";
     };
     Install = {
-			WantedBy = ["default.target"];
+	  WantedBy = ["default.target"];
     };
   };
 
@@ -200,42 +200,6 @@
   };
 
   services.ssh-agent.enable = true;
-
-  # Tmux configuration
-  programs.tmux = {
-    enable = true;
-    terminal = "xterm-256color";
-    baseIndex = 1;
-    keyMode = "vi";
-    
-    extraConfig = ''
-      unbind C-b
-      set -g prefix C-a
-      bind C-a send-prefix
-
-      bind \| split-window -h
-      bind - split-window -v
-      unbind '"'
-      unbind %
-
-      bind -r H select-window -t :-
-      bind -r L select-window -t :+
-      
-      bind -r h select-pane -L
-      bind -r j select-pane -D
-      bind -r k select-pane -U
-      bind -r l select-pane -R
-
-      set-option -sg escape-time 10
-      set-option -g focus-events on
-
-      set -g mouse on
-      set -g status-style "bg=#1e1e2e fg=#cdd6f4"
-      set -g window-status-current-style "bg=#89b4fa fg=#1e1e2e bold"
-    '';
-  };
-
-  
 
   # Zsh вместо fish
   programs.zsh = {
